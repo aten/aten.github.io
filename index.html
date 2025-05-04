@@ -47,30 +47,38 @@
         image = new MarvinImage();
         image.load("resources/gray.png", imageLoaded);
 
-        function imageLoaded() {
-            // show a marker on the map
-            marker = L.marker({ lon: 0, lat: 0 }).addTo(map);
-            marker.bindTooltip("60",
-                {
-                    permanent: true,
-                    direction: 'right'
-                })
+        let marker = null;
 
-            // update the marker when the map image is clicked
+        function imageLoaded() {
             const imgWidth = 3079, imgHeight = 5000;
+
             colorOverlay.on('click', (leafletEvent) => {
-                // see https://stackoverflow.com/a/42111623/1071630
                 var e = leafletEvent.originalEvent;
                 var rect = e.target.getBoundingClientRect();
-                var zoomedX = e.clientX - rect.left; //x position within the element.
-                var zoomedY = e.clientY - rect.top;  //y position within the element
+                var zoomedX = e.clientX - rect.left;
+                var zoomedY = e.clientY - rect.top;
 
                 const x = Math.round(zoomedX * imgWidth / rect.width);
                 const y = Math.round(zoomedY * imgHeight / rect.height);
-                marker.setLatLng(leafletEvent.latlng)
-                var value = image.getIntComponent0(x, y) / 2.55
-                var rounded = Math.round(value * 10) / 10
-                marker.setTooltipContent(rounded.toString())
+                const latlng = leafletEvent.latlng;
+                const value = image.getIntComponent0(x, y) / 2.55;
+                const rounded = Math.round(value * 10) / 10;
+
+                if (!marker) {
+                    marker = L.marker(latlng).addTo(map);
+                    marker.bindTooltip(rounded.toString(), {
+                        permanent: true,
+                        direction: 'right'
+                    });
+
+                    marker.on('click', function () {
+                        map.removeLayer(marker);
+                        marker = null;
+                    });
+                } else {
+                    marker.setLatLng(latlng);
+                    marker.setTooltipContent(rounded.toString());
+                }
             });
         }
     </script>
